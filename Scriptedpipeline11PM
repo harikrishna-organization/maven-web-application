@@ -1,0 +1,27 @@
+
+node('master') {
+    
+        def mavenHome = tool name: "maven 3.8.1"
+        properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), pipelineTriggers([pollSCM('* * * * *')])])
+         stage('CheckoutCode') {
+       
+         git credentialsId: '6551304b-3d0a-40b4-aeea-0bf6830622d8', url: 'https://github.com/erasappagari/maven-web-application.git'
+
+        }
+        stage('Build'){
+        sh "${mavenHome}/bin/mvn clean package"   
+        }
+        
+        stage('Deployment'){
+        sshagent(['0f8e0016-a4d3-439d-8648-06c16c6d7f58']) {
+        sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@18.118.167.87:/opt/apache-tomcat-9.0.46/webapps/"
+        }
+   }
+   stage('sendEmailNotification'){
+   emailext body: '''Build is over
+
+   Regards
+   Harikrishna
+   8971676921''', subject: 'Build is over', to: 'erasappagari@gmail.com'
+  } 
+}
